@@ -29,41 +29,37 @@ from mlp_layer import Layer
 
 print 'Program started'
 
-print(sys.argv)
-portID=int(sys.argv[1])
-
-clientID=vrep.simxStart('127.0.0.1',portID,True,True,5000,5)
+clientID=vrep.simxStart('127.0.0.1',19998,True,True,5000,5)
 if clientID!=-1:
     print('Connected to remote API server')
 
-    err,allHandles,allIntData,allFloatData,allStringData = vrep.simxGetObjectGroupData(clientID,vrep.sim_appobj_object_type,0,vrep.simx_opmode_oneshot_wait)
-    print "Err ", err
-    print "allHandles: ", allHandles
-    print "allIntData: ", allIntData
-    print "allFloatData: ", allFloatData
-    print "allStringData: ", allStringData
-
-    err,bubbleRobHandle=vrep.simxGetObjectHandle(clientID,"remoteApiControlledBubbleRob",vrep.simx_opmode_oneshot_wait)
-    err,bubbleRobBodyHandle=vrep.simxGetObjectHandle(clientID,"remoteApiControlledBubbleRobBody",vrep.simx_opmode_oneshot_wait)
-    err,bubbleRobBodyRespHandle=vrep.simxGetObjectHandle(clientID,"remoteApiControlledBubbleRobBody_respondable",vrep.simx_opmode_oneshot_wait)
-    err,bubbleRobGraphHandle=vrep.simxGetObjectHandle(clientID,"remoteApiControlledBubbleRobGraph",vrep.simx_opmode_oneshot_wait)
-
-
-    reliability_for_action = 50
-    default_velocity = 5
-    discount = 0.9
-
+    ################################# CODE FOR RESETTING ROB POSITION ###################################################
+    
+    err,bubbleRobHandle=vrep.simxGetObjectHandle(clientID,"remoteApiControlledBubbleRob",vrep.simx_opmode_oneshot_wait) #getHandle
+    err,bubbleRobStartPosition = vrep.simxGetObjectPosition(clientID, bubbleRobHandle, -1, vrep.simx_opmode_oneshot_wait) #getStartPosition
+    
     def reset_rob():
         ##### Set absolute position
-        #stop simulation
-        vrep.simxPauseSimulation(clientID,vrep.simx_opmode_oneshot_wait)
-
-        err,bubbleRobPosition = vrep.simxGetObjectPosition(clientID, bubbleRobBodyRespHandle, -1, vrep.simx_opmode_oneshot_wait)
-        print (err,"get bubbleRob position ","err while get bubbleRob position")
         
+        #stop simulation
+        vrep.simxStopSimulation(clientID,vrep.simx_opmode_oneshot_wait) 
+
+        #100ms delay, this is a hack because server isn't ready either
+        time.sleep(0.1)
+
         #set on absolute position
-        err = vrep.simxSetObjectPosition(clientID, bubbleRobBodyRespHandle, -1, [2,2,2], vrep.simx_opmode_oneshot_wait)
-        print (err,"setting bubbleRob position ","err while setting bubbleRob position ")
+        err = vrep.simxSetObjectPosition(clientID, bubbleRobHandle, -1, bubbleRobStartPosition, vrep.simx_opmode_oneshot_wait)
+
+        #start simulation again
+        vrep.simxStartSimulation(clientID,vrep.simx_opmode_oneshot_wait)
+
+    ################################## END RESETTING ROB  POSITION ########################################################
+
+    reliability_for_action = 50
+    default_velocity = 3
+    discount = 0.9
+
+    vrep.simxStartSimulation(clientID,vrep.simx_opmode_oneshot_wait)
 
     def get_number_of_pix(img):
         colval = numpy.zeros((res[0]*res[1],3))
@@ -76,17 +72,17 @@ if clientID!=-1:
                     colval[pix][col] = img[i] + 256
                 i += 1
 
-        red = 0
-        red_position = 0
-        green = 0
-        green_position = 0
-        blue = 0
-        blue_position = 0
+        red = 0.0
+        red_position = 0.0
+        green = 0.0
+        green_position = 0.0
+        blue = 0.0
+        blue_position = 0.0
 
         i = 0
         for pix in colval:
             i += 1
-            position = i % 32
+            position = (i % 32)
             if (pix[0] > 200 and pix[1] < 100 and pix[2] < 100):
                 red += 1
                 red_position += -1 + position * 0.0625 
@@ -103,8 +99,7 @@ if clientID!=-1:
         if (blue > 0):
             blue_position = blue_position / blue
 
-        input_vars = [red / 25, red_position, green / 25, green_position, blue / 25, blue_position]
-        #print input_vars
+        input_vars = [red / 256, red_position, green / 256, green_position, blue / 256, blue_position]
         return input_vars
 
     class NEURONAL_NETWORK:
@@ -127,11 +122,9 @@ if clientID!=-1:
             right_color = 0.0 + input_vals[right_color_no]
             reward = 0.0
 
-            right_color = 0.0 + right_color / 10
+            #right_color = 0.0 + right_color / 10
 
             reward = right_color * (1 - right_color_position_difference)
-
-            print input_vals, reward
 
             return reward
 
@@ -171,8 +164,8 @@ if clientID!=-1:
         vrep.simxSetJointTargetVelocity(clientID,rightMotorHandle,default_velocity,vrep.simx_opmode_oneshot)
 
     def move_forward():
-        vrep.simxSetJointTargetVelocity(clientID,leftMotorHandle,default_velocity,vrep.simx_opmode_oneshot)
-        vrep.simxSetJointTargetVelocity(clientID,rightMotorHandle,default_velocity,vrep.simx_opmode_oneshot)
+        vrep.simxSetJointTargetVelocity(clientID,leftMotorHandle,8,vrep.simx_opmode_oneshot)
+        vrep.simxSetJointTargetVelocity(clientID,rightMotorHandle,8,vrep.simx_opmode_oneshot)
 
     def move_backward():
         vrep.simxSetJointTargetVelocity(clientID,leftMotorHandle,-default_velocity,vrep.simx_opmode_oneshot)
@@ -236,9 +229,11 @@ if clientID!=-1:
         old_action = neuronal_network.select_action(old_q)
 
         i = 0
+        number_of_useless_steps = 0
+
         while (True):
             act(old_action)
-            time.sleep(0.1)
+            time.sleep(0.05)
             err,res,img = vrep.simxGetVisionSensorImage(clientID,visionSensorHandle,0,vrep.simx_opmode_oneshot_wait)
             
             new_input_vals = get_number_of_pix(img)
@@ -255,10 +250,18 @@ if clientID!=-1:
 
             i += 1
 
-            if i % 5 == 0:
+            if reward == 0.96875:
+                print "Target reached, resetting!"
                 reset_rob()
-                #neuronal_network.mlp.visualise_weights()
-    
+            elif reward == 0:
+                number_of_useless_steps += 1
+                if number_of_useless_steps > 25:
+                    number_of_useless_steps = 0
+                    print "To many useless steps, resetting!"
+                    reset_rob()
+            else:
+                number_of_useless_steps = 0
+
         # this is only for the err return value to end the while loop correctly - some other functions don't return a reliable err code!
         err,objs=vrep.simxGetObjects(clientID,vrep.sim_handle_all,vrep.simx_opmode_oneshot_wait)
 
