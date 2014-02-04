@@ -3,17 +3,30 @@ from mlp_network import MLP
 from mlp_layer import Layer
 
 class brainModel:
-        def __init__(self, reliability_for_action, discount, learning_rate, bias):
+        def __init__(self, reliability_for_action, discount, learning_rate, momentum, bias):
             self.reliability_for_action = reliability_for_action
             self.discount = discount
             self.learning_rate = learning_rate
             self.bias = bias
+            self.momentum = momentum
 
-            self.mlp = MLP(self.learning_rate)
+            self.mlp = MLP(self.learning_rate, self.momentum)
             self.mlp.add_layer(Layer(6))
             self.mlp.add_layer(Layer(6))
             self.mlp.add_layer(Layer(3))
             self.mlp.init_network(self.bias)
+
+        def get_params(self):
+            return self.reliability_for_action, self.discount, self.learning_rate, self.momentum, self.bias
+
+        def set_params(self, reliability_for_action, discount, learning_rate, momentum):
+            self.reliability_for_action = reliability_for_action
+            self.discount = discount
+            self.learning_rate = learning_rate
+
+            self.mlp.learning_rate = self.learning_rate
+            self.mlp.discount = self.discount
+            self.mlp.momentum = momentum
     
         def get_reward(self, input_vals):
             right_color_no = 0 # 0 for red, 1 for green and 2 for yellow
