@@ -1,0 +1,5 @@
+*.swp
+*.pyc
+vrep.py
+vrepConst.py
+remoteApi.so
