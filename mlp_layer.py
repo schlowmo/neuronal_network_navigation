@@ -6,6 +6,9 @@ def sigmoid(x):
 
 class Layer(object):
     def __init__(self, num_neurons, weight_function=lambda: numpy.random.uniform(0.0, 0.25), activation_fn=lambda x: sigmoid(x), derivative_fn=lambda x: sigmoid(x) * (1 - sigmoid(x))):
+        """
+        do the initial setup of the layer
+        """
         if num_neurons <= 0:
             raise ValueError
 
@@ -23,20 +26,32 @@ class Layer(object):
 
     ## set the next layer
     def next_layer(self, layer):
+        """
+        set the following layer
+        """
         self.next = layer
 
     ## set the previous layer
     def prev_layer(self, layer):
+        """
+        set the previous layer
+        """
         self.prev = layer
 
     ## initialize value vector
     def init_values(self):
+        """
+        initialize values
+        """
         self.values = [0 for _ in range(self.num_neurons)]
         if self.has_bias:
             self.values[-1] = 1.
 
     ## initialize weight matrix between this layer and his follower
     def init_weights(self):
+        """
+        initialize weights
+        """
         if self.next is not None:
             self.weights = []
             self.weight_changes = []
@@ -48,6 +63,9 @@ class Layer(object):
 
     ## used to set the bias if desired
     def set_bias(self):
+        """
+        enable bias on this layer
+        """
         self.num_neurons += 1
         self.has_bias = True
 
