@@ -12,7 +12,7 @@ class brainModel:
 
             self.mlp = MLP(self.learning_rate, self.momentum)
             self.mlp.add_layer(Layer(6))
-            self.mlp.add_layer(Layer(6))
+            self.mlp.add_layer(Layer(9))
             self.mlp.add_layer(Layer(3))
             self.mlp.init_network(self.bias)
 
@@ -53,7 +53,7 @@ class brainModel:
             new_q = [old_q_vector[0],old_q_vector[1],old_q_vector[2]]
 
             new_q[old_action] += prediction_error
-            self.mlp.back_propagate(new_q)
+            error = self.mlp.back_propagate(new_q)
             self.mlp.get_result(new_input_vals)
 
         def select_action(self,q_vector):

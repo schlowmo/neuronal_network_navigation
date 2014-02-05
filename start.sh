@@ -7,6 +7,7 @@ import select
 import time
 import ConfigParser
 import dill as pickle
+import matplotlib
 
 Config = ConfigParser.ConfigParser()
 
