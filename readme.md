@@ -15,6 +15,7 @@ Additional Features
 * autosetup routines for linux
 * global config file (config.ini)
 * state of network can be saved and loaded
+* configurable number of hidden layers in MLP
 
 Installation
 ------------
