@@ -3,21 +3,26 @@ from mlp_network import MLP
 from mlp_layer import Layer
 
 class brainModel:
-        def __init__(self, reliability_for_action, discount, learning_rate, momentum, bias):
+        def __init__(self, reliability_for_action, discount, learning_rate, momentum, bias, hidden_layers, number_of_neurons):
             self.reliability_for_action = reliability_for_action
             self.discount = discount
             self.learning_rate = learning_rate
             self.bias = bias
             self.momentum = momentum
+            self.hidden_layers = hidden_layers
+            self.number_of_neurons = number_of_neurons
 
             self.mlp = MLP(self.learning_rate, self.momentum)
             self.mlp.add_layer(Layer(6))
-            self.mlp.add_layer(Layer(9))
+            
+            for layer in range(self.hidden_layers):
+                self.mlp.add_layer(Layer(int(self.number_of_neurons[layer])))
+            
             self.mlp.add_layer(Layer(3))
             self.mlp.init_network(self.bias)
 
         def get_params(self):
-            return self.reliability_for_action, self.discount, self.learning_rate, self.momentum, self.bias
+            return self.reliability_for_action, self.discount, self.learning_rate, self.momentum, self.bias, self.hidden_layers, self.number_of_neurons
 
         def set_params(self, reliability_for_action, discount, learning_rate, momentum):
             self.reliability_for_action = reliability_for_action

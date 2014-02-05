@@ -6,20 +6,22 @@ import sys
 import select
 import time
 import ConfigParser
-import dill as pickle
+import dill
 import matplotlib
 
+#read Configuration from config.ini using native ConfigParser
 Config = ConfigParser.ConfigParser()
-
 Config.read("config.ini")
 
+#defines function for saving a network using dill module
 def saveNetwork(network, filename):
 	with open('saved/' + filename + '.pk', 'wb') as output:
-		pickle.dump(network, output, pickle.HIGHEST_PROTOCOL)
+		dill.dump(network, output, dill.HIGHEST_PROTOCOL)
 
+#defines function for loading a network using dill module
 def loadNetwork(filename):
 	with open('saved/' + filename + '.pk') as input:
-		return pickle.load(input)
+		return dill.load(input)
 
 def heardEnter():
 	i,o,e = select.select([sys.stdin],[],[],0.0001)
@@ -81,24 +83,26 @@ if clientID!=-1: #check if the connection to remote API server service was succe
 	learning_rate = Config.getfloat('network', 'learning_rate')
 	momentum = Config.getfloat('network', 'momentum')
 	bias = Config.getboolean('network', 'bias')
-	
+	hidden_layers = Config.getint('network', 'hidden_layers')
+	number_of_neurons = Config.get('network', 'number_of_neurons').split(',')
+
 	load = raw_input("Would you like to import a saved network?[Y/N]  ")
 	if (load == 'Y'):
 		filename = raw_input("Enter filename (under saved directory, without extension), leave empty if you changed your mind: ")
 		if (filename != ''):
 			brain = loadNetwork(filename)
 			print "Network loaded."
-			saved_reliability_for_action, saved_discount, saved_learning_rate, saved_momentum, saved_bias = brain.get_params()
-			print "SAVED PARAMS [S]:reliability_for_action = ", saved_reliability_for_action, " discount = ", saved_discount, " learning_rate = ", saved_learning_rate, " momentum = ", saved_momentum, " bias = ", saved_bias
-			print "CURRENT PARAMS [C]: reliability_for_action = ", reliability_for_action, " discount = ", discount, " learning_rate = ", learning_rate, " momentum = ", momentum, " bias = ", bias
+			saved_reliability_for_action, saved_discount, saved_learning_rate, saved_momentum, saved_bias, saved_hidden_layers, saved_number_of_neurons = brain.get_params()
+			print "SAVED PARAMS [S]:reliability_for_action = ", saved_reliability_for_action, " discount = ", saved_discount, " learning_rate = ", saved_learning_rate, " momentum = ", saved_momentum, " bias = ", saved_bias, " hidden_layers = ", saved_hidden_layers, " number_of_neurons = ", saved_number_of_neurons
+			print "CURRENT PARAMS [C]: reliability_for_action = ", reliability_for_action, " discount = ", discount, " learning_rate = ", learning_rate, " momentum = ", momentum, " bias = ", bias, " hidden_layers = ", hidden_layers, " number_of_neurons = ", number_of_neurons
 			print "Note that bias cannot be changed (yet)"
 			whichConfig = raw_input("Which params would you like to use? [S/C] ")
 			if (whichConfig == 'C'):
 				brain.set_params(reliability_for_action, discount, learning_rate, momentum)
 		else:
-			brain = brainModel(reliability_for_action, discount, learning_rate, momentum, bias)
+			brain = brainModel(reliability_for_action, discount, learning_rate, momentum, bias, hidden_layers, number_of_neurons)
 	else:
-		brain = brainModel(reliability_for_action, discount, learning_rate, momentum, bias)
+		brain = brainModel(reliability_for_action, discount, learning_rate, momentum, bias, hidden_layers, number_of_neurons)
 
 	#check if error occurs, we need this for our error checking while loop, suggested by v-rep devs
 	err,objs=vrep.simxGetObjects(clientID,vrep.sim_handle_all,vrep.simx_opmode_oneshot_wait)
@@ -183,7 +187,7 @@ save = True if save == 'Y' else False
 if(save):
 	filename = raw_input('Please enter a filename without extension. [Default: network, if no filename given]: ')
 	if (filename == ''):
-		filename = network
+		filename = 'network'
 	saveNetwork(brain, filename)
 	print 'Saved network as: saved/' + filename + '.pk'
 	print 'Finished!'
