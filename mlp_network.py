@@ -1,6 +1,5 @@
 import math
 from mlp_layer import Layer
-import KTimage as KT
 
 class MLP(object):
     def __init__(self, step = 0.3, momentum = 0.0):
@@ -96,10 +95,3 @@ class MLP(object):
                     layer.weights[i][j] += self.step * weight_change
                     layer.weight_changes[i][j] = weight_change
         return total_error
-
-    def visualise_weights(self):
-        pass
-        #for layer in self.layers:
-        #    if layer.next is not None:
-        #        KT.exporttiles (layer, res[1], res[0], "/home/morten/Uni/neuronale_netzwerke/V-REP/scenes/mybubbleRob/pgm/", 3, 1)
-    
