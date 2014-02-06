@@ -66,3 +66,4 @@ ToDo / possible Improvements
 * implement auto-setup routines for windows and mac os
 * autostart V-REP and autoload scene
 * better UI (integration in V-REP seems to be possible)
+* Visualisation for learning process
