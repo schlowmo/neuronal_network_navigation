@@ -53,3 +53,7 @@ File Overview
 * readme.md: you're currently reading this
 * rob.py: controller class for bubbleRob, implements functions to move the rob and to get (and process) the vision sensor; used by start.sh
 * start.sh: python shell script where all the magic starts
+
+Additional Notes
+----------------
+* dill is used in save_network function instead of the native module pickle because of problems with lambda functions; see [this](http://stackoverflow.com/q/16626429/2236166) stackoverflow thread for more information
