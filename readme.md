@@ -19,7 +19,7 @@ Additional Features
 
 Installation
 ------------
-* install python module dependencies, those are: numpy, dill and matplotlib
+* install python module dependencies, those are: [numpy](http://www.numpy.org/) and [dill](https://pypi.python.org/pypi/dill)
 * save this directory anywhere in your filesystem
 * edit the value of vrepPath in config.ini to met your local installation of V-REP
 * add the following lines to remoteApiConnections.txt in your V-REP base directory: 
@@ -57,3 +57,12 @@ File Overview
 Additional Notes
 ----------------
 * dill is used in save_network function instead of the native module pickle because of problems with lambda functions; see [this](http://stackoverflow.com/q/16626429/2236166) stackoverflow thread for more information
+
+ToDo / possible Improvements
+----------------------------
+* reimplement MLP with numpy for better performance
+* use the syncronus mode of V-REP for more precise calculations
+* improve learning 
+* implement auto-setup routines for windows and mac os
+* autostart V-REP and autoload scene
+* better UI (integration in V-REP seems to be possible)
