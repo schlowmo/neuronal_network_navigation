@@ -7,7 +7,6 @@ import select
 import time
 import ConfigParser
 import dill
-import matplotlib
 
 #read Configuration from config.ini using native ConfigParser
 Config = ConfigParser.ConfigParser()
@@ -31,36 +30,37 @@ def heardEnter():
 			return False
 	return True
 
-vrepPath = "/home/morten/Uni/neuronale_netzwerke/V-REP/"
-#OS switch
-if platform.system() =='Windows':
-	print "Setup routines for Windows not implemented yet. Aborting! Use a better OS (guess what), do a manual setup or the best solution: write your own setup routine and share it with others!"
-elif platform.system() == 'Darwin':
-	print "Setup routines for Mac OS not implemented yet. Aborting! Use a better OS (guess what), do a manual setup or the best solution: write your own setup routine and share it with others!"
-else:
-	print "Smart one, you're using the right OS. I will try automatic setup for you!"
-	
-	#Check if necessary librarys exists in this directory, if not, symlink to them
-	if not os.path.exists("./remoteApi.so"):
-		os.symlink(vrepPath + "remoteApi.so", "./remoteApi.so")
-	else: 
-		print "remoteApi.so already exists, hopefully it's a working link"
-	if not os.path.exists("./vrep.py"):
-		os.symlink(vrepPath + "/programming/Python/vrep.py", "./vrep.py")
-	else: 
-		print "vrep.py already exists, hopefully it's a working link"
-	if not os.path.exists("./vrepConst.py"):
-		os.symlink(vrepPath + "/programming/Python/vrepConst.py", "./vrepConst.py")
-	else: 
-		print "vrepConst.py already exists, hopefully it's a working link"
-	remoteServiceConfig = file(vrepPath + 'remoteApiConnections.txt').read()
-	if "portIndex2_port = 19999" in remoteServiceConfig:
-		print "Continious Remote API Service Server seems to be configured correctly, all setup is done"
+if Config.getboolean('environment', 'automatic'):
+	vrepPath = Config.get('environment', 'vrepPath')
+	#OS switch
+	if platform.system() =='Windows':
+		print "Setup routines for Windows not implemented yet. Aborting! Use a better OS (guess what), do a manual setup or the best solution: write your own setup routine and share it with others!"
+	elif platform.system() == 'Darwin':
+		print "Setup routines for Mac OS not implemented yet. Aborting! Use a better OS (guess what), do a manual setup or the best solution: write your own setup routine and share it with others!"
 	else:
-		print "Continious Remote API Service Server has to be added to remoteApiConnections.txt in your v-rep directory"
-		print "Please add the following lines to this file, restart V-REP and run this start.sh script again:\n"
-		print "portIndex2_port = 19999\nportIndex2_debug = false\nportIndex2_syncSimTrigger = false\n"
-		exit(0)
+		print "Smart one, you're using the right OS. I will try automatic setup for you!"
+		
+		#Check if necessary librarys exists in this directory, if not, symlink to them
+		if not os.path.exists("./remoteApi.so"):
+			os.symlink(vrepPath + "remoteApi.so", "./remoteApi.so")
+		else: 
+			print "remoteApi.so already exists, hopefully it's a working link"
+		if not os.path.exists("./vrep.py"):
+			os.symlink(vrepPath + "/programming/Python/vrep.py", "./vrep.py")
+		else: 
+			print "vrep.py already exists, hopefully it's a working link"
+		if not os.path.exists("./vrepConst.py"):
+			os.symlink(vrepPath + "/programming/Python/vrepConst.py", "./vrepConst.py")
+		else: 
+			print "vrepConst.py already exists, hopefully it's a working link"
+		remoteServiceConfig = file(vrepPath + 'remoteApiConnections.txt').read()
+		if "portIndex2_port = 19999" in remoteServiceConfig:
+			print "Continious Remote API Service Server seems to be configured correctly, all setup is done"
+		else:
+			print "Continious Remote API Service Server has to be added to remoteApiConnections.txt in your v-rep directory"
+			print "Please add the following lines to this file, restart V-REP and run this start.sh script again:\n"
+			print "portIndex2_port = 19999\nportIndex2_debug = false\nportIndex2_syncSimTrigger = false\n"
+			exit(0)
 
 #now neccessary librarys are symlinked, so we can import vrep and afterwards our own classes
 import vrep
@@ -87,7 +87,7 @@ if clientID!=-1: #check if the connection to remote API server service was succe
 	number_of_neurons = Config.get('network', 'number_of_neurons').split(',')
 
 	load = raw_input("Would you like to import a saved network?[Y/N]  ")
-	if (load == 'Y'):
+	if (load.upper() == 'Y'):
 		filename = raw_input("Enter filename (under saved directory, without extension), leave empty if you changed your mind: ")
 		if (filename != ''):
 			brain = loadNetwork(filename)
@@ -95,9 +95,9 @@ if clientID!=-1: #check if the connection to remote API server service was succe
 			saved_reliability_for_action, saved_discount, saved_learning_rate, saved_momentum, saved_bias, saved_hidden_layers, saved_number_of_neurons = brain.get_params()
 			print "SAVED PARAMS [S]:reliability_for_action = ", saved_reliability_for_action, " discount = ", saved_discount, " learning_rate = ", saved_learning_rate, " momentum = ", saved_momentum, " bias = ", saved_bias, " hidden_layers = ", saved_hidden_layers, " number_of_neurons = ", saved_number_of_neurons
 			print "CURRENT PARAMS [C]: reliability_for_action = ", reliability_for_action, " discount = ", discount, " learning_rate = ", learning_rate, " momentum = ", momentum, " bias = ", bias, " hidden_layers = ", hidden_layers, " number_of_neurons = ", number_of_neurons
-			print "Note that bias cannot be changed (yet)"
+			print "Note that bias and the number/neurons of hidden layers cannot be changed (yet)"
 			whichConfig = raw_input("Which params would you like to use? [S/C] ")
-			if (whichConfig == 'C'):
+			if (whichConfig.upper() == 'C'):
 				brain.set_params(reliability_for_action, discount, learning_rate, momentum)
 		else:
 			brain = brainModel(reliability_for_action, discount, learning_rate, momentum, bias, hidden_layers, number_of_neurons)
@@ -121,37 +121,46 @@ if clientID!=-1: #check if the connection to remote API server service was succe
 	#start simulation
 	vrep.simxStartSimulation(clientID,vrep.simx_opmode_oneshot_wait)
 	
+	#loop until max_runs is reached or forever if max_runs is set to unlimited
 	while ((max_runs == True or number_of_runs <= max_runs) and heardEnter()):
+		#loop checking for errors
 		while(err == vrep.simx_error_noerror or err == vrep.simx_error_novalue_flag): #this is our error checking loop, should run forever if no error in v-rep occurs
 
+			#initialize first state
 			old_input_vals = rob.get_and_process_image()
-
 			old_q = brain.mlp.get_result(old_input_vals)
 			old_action = brain.select_action(old_q)
 
+			#set step counters to zero
 			number_of_useless_steps = 0
-
 			number_of_steps = 0
 
+			#loop until max_steps is reached or forever if max_steps is set to unlimited
 			while (max_steps == True or number_of_steps <= max_steps):
 				rob.move(old_action)
-				time.sleep(0.05)
-
+				
+				#get current state
 				new_input_vals = rob.get_and_process_image()
-
 				new_q = brain.mlp.get_result(new_input_vals)
 				new_action = brain.select_action(new_q)
+				
+				#check for reward
 				reward = brain.get_reward(new_input_vals)
+				
+				#update network (MLP) based on last and current step
 				brain.update_weights(old_q, new_q, old_action, new_action, old_input_vals, new_input_vals, reward)
 
+				#old becomes new
 				old_q = new_q
 				old_action = new_action
 				old_input_vals = new_input_vals
 
+				#check if target is reached
 				if reward == 0.96875:
 					print "Target reached, resetting!"
 					rob.reset_rob()
 					break
+				#check if number of useless steps is reached
 				elif (max_useless_steps != True and reward == 0):
 					number_of_useless_steps += 1
 					if number_of_useless_steps > max_useless_steps:
@@ -159,6 +168,7 @@ if clientID!=-1: #check if the connection to remote API server service was succe
 						print "To many useless steps, resetting!"
 						rob.reset_rob()
 						break
+				#set useless step counter to zero
 				else:
 					number_of_useless_steps = 0
 
@@ -171,6 +181,7 @@ if clientID!=-1: #check if the connection to remote API server service was succe
 
 			break
 
+	#stop simulation and close connection to remote API server serice
 	vrep.simxStopSimulation(clientID, vrep.simx_opmode_oneshot_wait)
 	vrep.simxFinish(clientID)
 
@@ -181,9 +192,10 @@ else:
 	exit(1)
 
 
+#ask user if the network shoukd be saved
 print "Simulation ended, would you like to save current status of neuronal_network?"
 save = raw_input('Press Y or N:  ')
-save = True if save == 'Y' else False
+save = save.upper() == 'Y'
 if(save):
 	filename = raw_input('Please enter a filename without extension. [Default: network, if no filename given]: ')
 	if (filename == ''):
@@ -194,4 +206,5 @@ if(save):
 else:
 	print 'Finished without saving!'
 
+#exit without errors
 exit(0)

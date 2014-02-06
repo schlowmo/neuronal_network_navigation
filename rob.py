@@ -38,21 +38,30 @@ class robController(object):
 		err,self.bubbleRobStartPosition = vrep.simxGetObjectPosition(clientID, bubbleRobHandle, -1, vrep.simx_opmode_oneshot_wait) #getStartPosition
 			
 	def move(self, direction):
+		"""
+			sets velocity of wheels to move the bubbleRob
+		"""
+
 		velocity = []
 
 		if direction == 0: #forward
 			velocity = [8,8]
 		elif direction == 1: #left
-			velocity = [0,3]
+			velocity = [3,8]
 		elif direction == 2: #right
-			velocity = [3,0]
+			velocity = [8,3]
 		elif direction == 3: #backward
 			velocity = [-8,-8]
 
 		vrep.simxSetJointTargetVelocity(self.clientID,self.leftMotorHandle,velocity[0],vrep.simx_opmode_oneshot)
 		vrep.simxSetJointTargetVelocity(self.clientID,self.rightMotorHandle,velocity[1],vrep.simx_opmode_oneshot)
 
+		time.sleep(0.1)
+
 	def get_and_process_image(self):
+		"""
+			returns the aggregated data of bubbleRobs Vision Sensor
+		"""
 		err,res,img = vrep.simxGetVisionSensorImage(self.clientID,self.visionSensorHandle,0,vrep.simx_opmode_oneshot_wait)
 
 		colval = numpy.zeros((res[0]*res[1],3))
@@ -97,16 +106,22 @@ class robController(object):
 		return input_vars
 
 	def reset_rob(self):
+		"""
+			Sets the bubbleRob to his starting position; mind the hack, simulation has to be stopped 
+		"""
+
 		##### Set absolute position
 
 		#stop simulation
 		vrep.simxStopSimulation(self.clientID,vrep.simx_opmode_oneshot_wait) 
 
 		#100ms delay, this is a hack because server isn't ready either
-		time.sleep(0.1)
+		time.sleep(0.3)
 
 		#set on absolute position
 		err = vrep.simxSetObjectPosition(self.clientID, self.bubbleRobHandle, -1, self.bubbleRobStartPosition, vrep.simx_opmode_oneshot_wait)
 
 		#start simulation again
 		vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+
+		time.sleep(0.3)

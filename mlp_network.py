@@ -8,12 +8,17 @@ class MLP(object):
         self.momentum = momentum # set to zero if you don't want to use a momentum in backpropagation
         self.verbose = False
 
-    ## Add layer while first layer is input layer, last layer is output layer and the rest are hidden layers
     def add_layer(self, layer):
+        """
+            Add layer while first layer is input layer, last layer is output layer and the rest are hidden layers
+        """
         self.layers.append(layer)
 
-    ## Initialize weights between layers and set bias to input layer if desired
     def init_network(self, bias=False):
+        """
+            Initialize weights between layers and set bias to input layer if desired
+        """
+
         if bias:
             self.layers[0].set_bias()
         
@@ -27,14 +32,10 @@ class MLP(object):
 
             self.layers[i].init_values()
 
-    ## Train the network until max_interations or the desired accurency (error) is reached (optional)
-    def train(self, input, target):
-            self.get_result(input)
-            self.back_propagate(target)
-            
-
-    ## get result for an inpunt
     def get_result(self, input):
+        """
+            get result for an inpunt
+        """
         zero_layer = self.layers[0]
         required = zero_layer.num_neurons
         if zero_layer.has_bias:
@@ -50,8 +51,10 @@ class MLP(object):
         self.activate()
         return self.layers[-1].values
 
-    ## activate each layer
     def activate(self):
+        """
+            activate each layer
+        """
         for layer in self.layers[1:]:
             lim = layer.num_neurons
             if layer.has_bias:
@@ -62,8 +65,10 @@ class MLP(object):
                     val = val + h_neuron_value * layer.prev.weights[h_idx][idx]
                 layer.values[idx] = layer.activation_fn(val)
 
-    ## back propagate error for each layer
     def back_propagate(self, desired):
+        """
+            back propagate error for each layer
+        """
         difs = []
         total_error = 0.0
 

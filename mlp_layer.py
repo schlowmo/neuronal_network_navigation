@@ -5,7 +5,7 @@ def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
 class Layer(object):
-    def __init__(self, num_neurons, weight_function=lambda: numpy.random.uniform(0.0, 0.25), activation_fn=lambda x: sigmoid(x), derivative_fn=lambda x: sigmoid(x) * (1 - sigmoid(x))):
+    def __init__(self, num_neurons, weight_function=lambda: numpy.random.uniform(0.0, 0.2), activation_fn=lambda x: sigmoid(x), derivative_fn=lambda x: sigmoid(x) * (1 - sigmoid(x))):
         """
         do the initial setup of the layer
         """
